@@ -1,2 +1,4 @@
 node_modules
 fans.json
+fans-copy.json
+.env
