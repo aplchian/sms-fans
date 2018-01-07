@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`find fans within range should work and return a fan 1`] = `
+Array [
+  Object {
+    "name": "alex",
+    "zip": "29464",
+  },
+]
+`;
+
+exports[`find fans within range should work and return no fans 1`] = `Array []`;

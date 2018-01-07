@@ -8,6 +8,7 @@ const {
   filter,
   join,
   forEach,
+  isEmpty,
   length,
   toLower,
   head
@@ -16,25 +17,14 @@ const fans = require("./fans.json")
 const bodyParser = require("body-parser")
 const zipcodes = require("zipcodes")
 const sendSMS = require("./lib/sms")
+import findFansWithinRange from "./lib/findFansWithinRange"
+const sendMessage = require("./lib/sendMessage")
 
 app.use(bodyParser.urlencoded({ extended: true }))
 const fromNum = process.env.OUTGOING
 
 app.get("/", (req, res) => {
   res.send({ ok: true })
-})
-
-const findFansWithinRange = curry((distance, zipCode, fans) => {
-  const fanInRange = fan => zipcodes.distance(fan.zip, zipCode) <= distance
-  return filter(fanInRange, fans)
-})
-
-const sendMessage = curry((message, fromNum, fan) => {
-  sendSMS({
-    to: fan.phone,
-    from: fromNum,
-    body: message
-  })
 })
 
 app.post("/sms", async (req, res) => {
@@ -56,6 +46,7 @@ app.post("/sms", async (req, res) => {
       const [zip, distance, ...message] = msg
       const messageStr = join(" ", message)
       const fansWithinRange = findFansWithinRange(distance, zip, fans)
+      if (isEmpty(fansWithinRange)) throw new Error("No fans found!")
       forEach(sendMessage(messageStr, fromNum), fansWithinRange)
       sendMessage(
         `${length(fansWithinRange)} messages were succesfully sent!`,
@@ -65,15 +56,8 @@ app.post("/sms", async (req, res) => {
       res.send({ ok: true })
     }
   } catch (error) {
-    console.log("error", error)
-    sendMessage(
-      `something went wrong.. make sure you use the format:
-      zipcode distance message 
-      28464 100 hey this is an example message
-      `,
-      req.body.To,
-      { phone: req.body.From }
-    )
+    console.log("error", error.message)
+    sendMessage(error.message, req.body.To, { phone: req.body.From })
   }
 })
 
